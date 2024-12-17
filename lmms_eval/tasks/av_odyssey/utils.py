@@ -11,6 +11,7 @@ import random
 from loguru import logger as eval_logger
 
 from lmms_eval.tasks._task_utils.file_utils import generate_submission_file
+from lmms_eval.tasks._task_utils.video_loader import get_cache_dir
 
 dir_name = os.path.dirname(os.path.abspath(__file__))
 
@@ -26,24 +27,34 @@ eval_type_dict = {
     ],
 }
 
+with open(Path(__file__).parent / "av_odyssey.yaml", "r") as f:
+    raw_data = f.readlines()
+    safe_data = []
+    for i, line in enumerate(raw_data):
+        # remove function definition since yaml load cannot handle it
+        if "!function" not in line:
+            safe_data.append(line)
+
+    config = yaml.safe_load("".join(safe_data))
+
 hf_home = os.getenv("HF_HOME", "~/.cache/huggingface/")
-base_cache_dir = os.path.expanduser(hf_home)
+cache_dir = os.path.join(hf_home, config["dataset_kwargs"]["cache_dir"])
 
 question_prompt = "Answer with the option's letter from the given choices directly."
 
 
 def av_odyssey_doc_to_visual(doc):
     visual_data = []
-    
+
     # 获取当前目录的上一级目录
     base_dir = os.path.dirname(os.getcwd())
     base_dir = os.path.join(base_dir, 'AV_Odyssey_Bench_LMMs_Eval')
     # 处理 image 类型数据
     if 'image' in doc['data_type']:
         for relative_path in doc['image_path']:
-            # 从上一级目录拼接路径
-            relative_path = os.path.join(relative_path.split('/')[0], relative_path)
-            abs_path = os.path.join(base_dir, relative_path)
+            # # 从上一级目录拼接路径
+            # relative_path = os.path.join(relative_path.split('/')[0], relative_path)
+            abs_path = os.path.join(cache_dir, relative_path)
             if os.path.exists(abs_path):
                 visual_data.append(abs_path)  # 保留路径以供后续处理
             else:
@@ -52,9 +63,7 @@ def av_odyssey_doc_to_visual(doc):
     # 处理 video 类型数据
     elif 'video' in doc['data_type']:
         for relative_path in doc['video_path']:
-            # 从上一级目录拼接路径
-            relative_path = os.path.join(relative_path.split('/')[0], relative_path)
-            abs_path = os.path.join(base_dir, relative_path)
+            abs_path = os.path.join(cache_dir, relative_path)
             if os.path.exists(abs_path):
                 visual_data.append(abs_path)  # 保留路径以供后续处理
             else:
@@ -62,9 +71,7 @@ def av_odyssey_doc_to_visual(doc):
                 
     # 处理 audio 类型数据
     for relative_path in doc['audio_path']:
-        # 从上一级目录拼接路径
-        relative_path = os.path.join(relative_path.split('/')[0], relative_path)
-        abs_path = os.path.join(base_dir, relative_path)
+        abs_path = os.path.join(cache_dir, relative_path)
         if os.path.exists(abs_path):
             visual_data.append(abs_path)  # 保留路径以供后续处理
         else:

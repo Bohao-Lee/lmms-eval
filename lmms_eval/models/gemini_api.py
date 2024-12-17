@@ -161,38 +161,10 @@ class GeminiAPI(lmms):
                 temperature=gen_kwargs["temperature"],
             )
 
-
-            if task == 'av_odyssey':
-
-                visuals_audios_mix = doc_to_visual(self.task_dict[task][split][doc_id])
-                
-                images = []
-                audios = []
-                videos = []
-
-                # 遍历列表，分类元素
-                for item in visuals_audios_mix:
-                    if item.endswith('.png'): 
-                        images.append(item)
-                    elif item.endswith('.wav'): 
-                        audios.append(item)
-                    elif item.endswith('.mp4'): 
-                        videos.append(item)
-                
-                if videos == []:
-                    message = self.get_image_audio_text_interleaved_messsage(images, audios, contexts)
-                if images == []:
-                    message = self.get_video_audio_text_interleaved_message(videos, audios, contexts)
-                
-                # res.append('The answer is A.')
-                # continue
-                
-                            
-            else:
-                visuals = [doc_to_visual(self.task_dict[task][split][doc_id])]            
-                visuals = self.flatten(visuals)
-                visuals = self.convert_modality(visuals)
-                message = [contexts] + visuals 
+            visuals = [doc_to_visual(self.task_dict[task][split][doc_id])]            
+            visuals = self.flatten(visuals)
+            visuals = self.convert_modality(visuals)
+            message = [contexts] + visuals 
 
             for attempt in range(5):
                 try:
